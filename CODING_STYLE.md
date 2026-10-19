@@ -47,9 +47,9 @@
 - Write unit tests for new functionality
 
 ## Author Information
-- Author: Prasad Subrahmanya
-- Email: [Your Email]
-- GitHub: [Your GitHub]
+- Author: Gaurav
+- Email: gauravkr11311@gmail.com
+- GitHub: https://github.com/Gauravchaudhary76
 
 ## Version Control
 - Use meaningful commit messages

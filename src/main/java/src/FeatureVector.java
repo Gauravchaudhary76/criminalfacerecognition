@@ -6,7 +6,7 @@ package src;
  * and its classification information. It stores both the numerical
  * feature representation and associated metadata.
  *
- * @author Prasad Subrahmanya
+ * @author Gaurav <gauravkr11311@gmail.com>
  * @version 1.0
  * @since 1.0
  */

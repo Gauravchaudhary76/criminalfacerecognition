@@ -2,7 +2,7 @@
  * Two-Stage Classification and Detection (TSCD) implementation for face recognition.
  * This class handles the core face recognition algorithms using eigenfaces.
  *
- * @author Prasad Subrahmanya
+ * @author Gaurav <gauravkr11311@gmail.com>
  * @version 1.0
  * @since 1.0
  */
@@ -110,7 +110,9 @@ public class TSCD {
         Matrix L = At.times(A);
         EigenvalueDecomposition eigen = L.eig();
         eigenValues = eigen.getD();
-        eigenVectors = eigen.getV();
+        // Convert eigenvectors of A^T * A to eigenvectors of covariance matrix A * A^T: U = A * V
+        Matrix v = eigen.getV();
+        eigenVectors = A.times(v);
     }
 
     /**
@@ -130,7 +132,7 @@ public class TSCD {
     private void extractEigenvalues(Matrix A) {
         double[] values = diag(eigenValues);
         for (int i = 0; i < values.length; i++) {
-            values[i] /= A.getColumnDimension() - 1;
+            values[i] /= Math.max(1, A.getColumnDimension() - 1);
         }
     }
 
@@ -139,18 +141,28 @@ public class TSCD {
      */
     private void normalizeEigenvectors() {
         numEigenVectors = 0;
-        for (int i = 0; i < eigenVectors.getColumnDimension(); i++) {
-            Matrix tmp;
-            if (eigenValues.get(i, i) < EIGENVALUE_THRESHOLD) {
-                tmp = new Matrix(eigenVectors.getRowDimension(), 1);
-            } else {
-                tmp = eigenVectors.getMatrix(0, eigenVectors.getRowDimension() - 1, i, i)
-                    .times(1 / eigenVectors.getMatrix(0, eigenVectors.getRowDimension() - 1, i, i).normF());
+        int cols = eigenVectors.getColumnDimension();
+        int rows = eigenVectors.getRowDimension();
+        Matrix normalized = new Matrix(rows, cols);
+
+        for (int i = 0; i < cols; i++) {
+            Matrix col = eigenVectors.getMatrix(0, rows - 1, i, i);
+            double norm = col.normF();
+            if (norm > EIGENVALUE_THRESHOLD) {
+                normalized.setMatrix(0, rows - 1, numEigenVectors, numEigenVectors, col.times(1.0 / norm));
                 numEigenVectors++;
             }
-            eigenVectors.setMatrix(0, eigenVectors.getRowDimension() - 1, i, i, tmp);
         }
-        eigenVectors = eigenVectors.getMatrix(0, eigenVectors.getRowDimension() - 1, 0, numEigenVectors - 1);
+
+        if (numEigenVectors == 0 && cols > 0) {
+            // Fallback: keep at least the first eigenvector
+            Matrix col = eigenVectors.getMatrix(0, rows - 1, 0, 0);
+            double norm = col.normF();
+            normalized.setMatrix(0, rows - 1, 0, 0, norm > 0 ? col.times(1.0 / norm) : col);
+            numEigenVectors = 1;
+        }
+
+        eigenVectors = normalized.getMatrix(0, rows - 1, 0, numEigenVectors - 1);
     }
 
     /**
@@ -161,12 +173,21 @@ public class TSCD {
      * @return Array of eigenface coefficients
      */
     public double[] getEigenFaces(Picture pic, int number) {
+        if (numEigenVectors == 0 || eigenVectors == null) {
+            return new double[number];
+        }
         if (number > numEigenVectors) {
             number = numEigenVectors;
         }
 
         double[] pixels = pic.getImagePixels();
         Matrix face = new Matrix(pixels, pixels.length);
+
+        // Subtract average face if dimensions match
+        if (averageFace != null && averageFace.getColumnDimension() == pixels.length) {
+            face = face.minus(averageFace.transpose());
+        }
+
         Matrix vectors = eigenVectors.getMatrix(0, eigenVectors.getRowDimension() - 1, 0, number - 1).transpose();
         Matrix result = vectors.times(face);
 

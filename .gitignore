@@ -98,4 +98,5 @@ log/
 *.tmp
 *.temp
 *.swp
-*~.nib 
+*~.nib
+users.txt 

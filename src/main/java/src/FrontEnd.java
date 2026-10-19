@@ -2,7 +2,7 @@
  * Front end for the 3D Face Recognition system.
  * Provides a graphical user interface for user authentication and face recognition operations.
  *
- * @author Prasad Subrahmanya
+ * @author Gaurav <gauravkr11311@gmail.com>
  * @version 1.0
  * @since 1.0
  */
@@ -11,6 +11,7 @@ package src;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.PrintWriter;
 import java.sql.*;
@@ -303,17 +304,24 @@ public class FrontEnd extends JPanel implements ActionListener {
             return;
         }
 
-        String username = usernameField.getText();
+        String username = usernameField.getText().trim();
         String password = new String(passwordField.getPassword());
         
+        // 1. Try database login if available
         try {
             if (tryDatabaseLogin(username, password)) {
                 return;
             }
-            tryFileLogin(username, password);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(frame, "Login failed!");
+            // Database is unreachable or not configured; fall back to local file login
         }
+
+        // 2. Fall back to local file authentication
+        if (tryFileLogin(username, password)) {
+            return;
+        }
+
+        JOptionPane.showMessageDialog(frame, "Invalid username or password!", "Login Failed", JOptionPane.ERROR_MESSAGE);
     }
 
     /**
@@ -323,7 +331,7 @@ public class FrontEnd extends JPanel implements ActionListener {
      * @return true if all required fields are filled, false otherwise
      */
     private boolean validateLoginInput() {
-        if (usernameField.getText().isEmpty()) {
+        if (usernameField.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(frame, "Please enter Username!");
             return false;
         }
@@ -361,23 +369,55 @@ public class FrontEnd extends JPanel implements ActionListener {
     }
 
     /**
+     * Creates default users file with an admin account if none exists.
+     */
+    private void createDefaultUserFile() {
+        try {
+            File file = new File("users.txt");
+            if (!file.exists()) {
+                try (PrintWriter writer = new PrintWriter(file, "UTF-8")) {
+                    writer.println("admin " + hashPassword("admin123"));
+                }
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    /**
      * Attempts to authenticate the user against the local file.
      *
      * @param username the username to authenticate
      * @param password the password to verify
+     * @return true if login succeeded
      */
-    private void tryFileLogin(String username, String password) {
-        try (BufferedReader reader = new BufferedReader(new FileReader("users.txt"))) {
-            String line = reader.readLine();
-            if (line != null) {
-                String[] parts = line.split("\\s");
-                if (username.equals(parts[0]) && password.equals(parts[1])) {
-                    launchMainApplication();
+    private boolean tryFileLogin(String username, String password) {
+        createDefaultUserFile();
+        File file = new File("users.txt");
+        if (!file.exists()) {
+            return false;
+        }
+
+        String hashedPassword = hashPassword(password);
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty()) {
+                    continue;
+                }
+                String[] parts = line.split("\\s+");
+                if (parts.length >= 2) {
+                    if (username.equalsIgnoreCase(parts[0]) && 
+                        (hashedPassword.equals(parts[1]) || password.equals(parts[1]))) {
+                        launchMainApplication();
+                        return true;
+                    }
                 }
             }
         } catch (Exception e) {
             // Ignore file login errors
         }
+        return false;
     }
 
     /**
@@ -386,18 +426,17 @@ public class FrontEnd extends JPanel implements ActionListener {
      */
     private void launchMainApplication() {
         JFrame j2 = new JFrame("3D Face Recognition under Expressions, Occlusions and Pose Variations");
-        JApplet applet = new Main();
-        j2.add(applet);
-        j2.setLocation(0, 0);
-        j2.setSize(1366, 730);
-        j2.setVisible(true);
-        applet.init();
+        Main mainPanel = new Main();
+        j2.getContentPane().add(mainPanel);
+        j2.setSize(1200, 750);
+        j2.setLocationRelativeTo(null);
+        mainPanel.init();
         frame.dispose();
 
         j2.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent windowEvent) {
-                int reply = JOptionPane.showConfirmDialog(frame,
+                int reply = JOptionPane.showConfirmDialog(j2,
                     "Are you sure you want to exit?", "Confirmation",
                     JOptionPane.YES_NO_OPTION);
                 if (reply == JOptionPane.YES_OPTION) {
@@ -440,19 +479,20 @@ public class FrontEnd extends JPanel implements ActionListener {
             return;
         }
 
-        String username = regUsernameField.getText();
-        String email = emailField.getText();
-        String phone = phoneField.getText();
+        String username = regUsernameField.getText().trim();
+        String email = emailField.getText().trim();
+        String phone = phoneField.getText().trim();
         String password = new String(regPasswordField.getPassword());
 
         try {
             if (tryDatabaseRegistration(username, email, phone, password)) {
                 return;
             }
-            tryFileRegistration(username, password);
         } catch (Exception ex) {
-            handleRegistrationError(ex);
+            // Database is unreachable; fall back to local file registration
         }
+
+        tryFileRegistration(username, password);
     }
 
     /**
@@ -584,12 +624,28 @@ public class FrontEnd extends JPanel implements ActionListener {
      * @param password the password for the new account
      */
     private void tryFileRegistration(String username, String password) {
-        try (PrintWriter writer = new PrintWriter("users.txt", "UTF-8")) {
-            writer.println(username + " " + password);
+        File file = new File("users.txt");
+        if (file.exists()) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] parts = line.trim().split("\\s+");
+                    if (parts.length > 0 && username.equalsIgnoreCase(parts[0])) {
+                        JOptionPane.showMessageDialog(frame, "Username already registered!");
+                        return;
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        String hashedPassword = hashPassword(password);
+        try (PrintWriter writer = new PrintWriter(new java.io.FileWriter("users.txt", true))) {
+            writer.println(username + " " + hashedPassword);
             JOptionPane.showMessageDialog(frame, "Registration successful!");
             switchToLogin();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(frame, "Registration failed!");
+            JOptionPane.showMessageDialog(frame, "Registration failed: " + e.getMessage());
         }
     }
 

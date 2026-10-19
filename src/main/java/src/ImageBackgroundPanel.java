@@ -11,14 +11,12 @@ import java.io.*;
  * The image is scaled to fit the panel's dimensions.
  * Provides a customizable background for the application interface.
  *
- * @author Prasad Subrahmanya
+ * @author Gaurav <gauravkr11311@gmail.com>
  * @version 1.0
  * @since 1.0
  */
 public class ImageBackgroundPanel extends JPanel {
     private static final long serialVersionUID = 1L;
-    private static final String BACKGROUND_IMAGE_PATH = "/src/src/bkd.png";
-    
     private BufferedImage backgroundImage;
 
     /**
@@ -30,13 +28,27 @@ public class ImageBackgroundPanel extends JPanel {
     }
 
     /**
-     * Loads the background image from the specified path.
+     * Loads the background image from the classpath resource or file system.
      * If the image cannot be loaded, a blank panel will be displayed.
      */
     private void loadBackgroundImage() {
         try {
-            String imagePath = System.getProperty("user.dir").replace('\\', '/') + BACKGROUND_IMAGE_PATH;
-            backgroundImage = ImageIO.read(new File(imagePath));
+            InputStream is = getClass().getResourceAsStream("/bkd.png");
+            if (is != null) {
+                try (is) {
+                    backgroundImage = ImageIO.read(is);
+                    return;
+                }
+            }
+            File f = new File("src/main/resources/bkd.png");
+            if (f.exists()) {
+                backgroundImage = ImageIO.read(f);
+                return;
+            }
+            f = new File("bkd.png");
+            if (f.exists()) {
+                backgroundImage = ImageIO.read(f);
+            }
         } catch (IOException e) {
             System.err.println("Failed to load background image: " + e.getMessage());
         }

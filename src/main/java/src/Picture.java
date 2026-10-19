@@ -14,7 +14,7 @@ import javax.swing.JComponent;
  * A component that displays and processes images for face recognition.
  * Provides methods for image manipulation and pixel extraction.
  *
- * @author Prasad Subrahmanya
+ * @author Gaurav <gauravkr11311@gmail.com>
  * @version 1.0
  */
 public class Picture extends JComponent {

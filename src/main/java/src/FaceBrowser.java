@@ -25,7 +25,7 @@ import javax.swing.border.TitledBorder;
  * Provides functionality for highlighting and ordering faces based on classification.
  * Manages a scrollable view of face items, each containing an image and metadata.
  *
- * @author Prasad Subrahmanya
+ * @author Gaurav <gauravkr11311@gmail.com>
  * @version 1.0
  * @since 1.0
  */
@@ -67,6 +67,7 @@ public class FaceBrowser extends JPanel {
      */
     public void addFace(Face face) {
         FaceItem item = new FaceItem(face);
+        faceItems.add(item);
         this.add(item);
         itemToFaceMap.put(item, face);
         faceToItemMap.put(face, item);
@@ -113,8 +114,11 @@ public class FaceBrowser extends JPanel {
      * @param classification the classification to highlight
      */
     public void highlightClassifiedAs(String classification) {
+        if (classification == null) {
+            return;
+        }
         for (FaceItem item : faceItems) {
-            if (item.getFace().getClassification().equals(classification)) {
+            if (item.getFace() != null && classification.equals(item.getFace().getClassification())) {
                 item.setBorder(BorderFactory.createLineBorder(Color.RED, 2));
             } else {
                 item.setBorder(BorderFactory.createRaisedBevelBorder());
@@ -130,8 +134,15 @@ public class FaceBrowser extends JPanel {
      */
     public void orderAs(FeatureSpace.FaceDistancePair[] faceDistances) {
         removeAll();
-        for (FeatureSpace.FaceDistancePair pair : faceDistances) {
-            add(new FaceItem(pair.getFace()));
+        faceItems.clear();
+        itemToFaceMap.clear();
+        faceToItemMap.clear();
+        if (faceDistances != null) {
+            for (FeatureSpace.FaceDistancePair pair : faceDistances) {
+                if (pair != null && pair.getFace() != null) {
+                    addFace(pair.getFace());
+                }
+            }
         }
         revalidate();
         repaint();
@@ -163,7 +174,7 @@ public class FaceBrowser extends JPanel {
  * Provides visual feedback about the face's classification status and similarity
  * to other faces through color coding and distance information.
  *
- * @author Prasad Subrahmanya
+ * @author Gaurav <gauravkr11311@gmail.com>
  * @version 1.0
  * @since 1.0
  */

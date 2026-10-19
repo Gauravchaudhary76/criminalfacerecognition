@@ -1,141 +1,153 @@
 # Face Recognition System
 
-[![Build Status](https://github.com/prasadus92/face-recognition/actions/workflows/build.yml/badge.svg)](https://github.com/prasadus92/face-recognition/actions/workflows/build.yml)
+[![Build Status](https://github.com/Gauravchaudhary76/criminalfacerecognition/actions/workflows/build.yml/badge.svg)](https://github.com/Gauravchaudhary76/criminalfacerecognition/actions/workflows/build.yml)
+[![Java Version](https://img.shields.io/badge/Java-21%2B%20LTS-orange)](https://www.oracle.com/java/technologies/downloads/)
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](License.txt)
 
-## Author
-**Prasad Subrahmanya**  
-[GitHub Profile](https://github.com/prasadus92)
+A modernized Java 25+ face recognition system using eigenfaces and Turk & Pentland dimensionality reduction for face recognition under varying expressions, occlusions (e.g., glasses), and pose variations.
 
-A Java-based face recognition system that uses eigenfaces for face recognition under various conditions including expressions, occlusions, and pose variations.
+---
 
 ## Features
 
-- Face recognition under different conditions:
-  - Facial expressions
-  - Occlusions (e.g., glasses)
-  - Pose variations (up to 60 degrees)
-- Interactive GUI for:
-  - Loading and processing face images
-  - Training the recognition system
-  - Testing face recognition
-  - Visualizing results
-- Support for batch processing
-- Results visualization with 3D charts
+- **Face Recognition with Eigenfaces**:
+  - Two-Stage Classification and Detection (TSCD).
+  - Robust against expressions, glasses, facial hair, and illumination changes.
+  - K-Nearest Neighbor (k-NN) classification in eigen-feature space with Euclidean distance.
+- **Interactive Swing GUI**:
+  - User Authentication (Login & Registration) with SHA-256 password security.
+  - Automatic fallback between MySQL database and zero-config local storage (`users.txt`).
+  - Face Browser panel displaying all loaded face candidates with distance-sorted similarity ranking.
+  - Color-highlighted match detection and candidate preview.
+  - Interactive **3D Feature Space Visualization** with real-time mouse rotation, zoom, coordinate axes, and probe highlight.
+- **Sample Dataset Included**:
+  - Includes synthetic test faces in `data/sample-faces/` for immediate testing.
+- **Self-Contained & Modern Build**:
+  - Built on standard Java 25 LTS with Maven Wrapper (`./mvnw`).
+  - No legacy native 32-bit DLLs or manual JAR downloads required.
+  - Packaged with executable fat JAR (`jar-with-dependencies`).
+
+---
 
 ## Technical Details
 
-- Uses eigenfaces for face recognition
-- Implements Two-Stage Classification and Detection (TSCD)
-- Supports 3D face visualization
-- Uses Java 3D for 3D rendering
-- MySQL database for user management
+- **Core Algorithm**: Turk & Pentland Eigenface decomposition using surrogate covariance matrix ($A^T A$) with full eigenvector back-projection ($U = A \cdot V$) and L2 unit normalization.
+- **Linear Algebra**: Jama Matrix decomposition.
+- **UI & Graphics**: Java Swing & Java 2D with anti-aliasing and 3D projection rendering.
+- **Authentication**: SHA-256 hashing with Base64 encoding.
+
+---
 
 ## Prerequisites
 
-- Java Development Kit (JDK) 8 or higher
-- Maven 3.6 or higher
-- MySQL 5.7 or higher
-- Java 3D API
+- **Java Development Kit (JDK) 25** or higher.
+- **Maven 3.6+** (or use the bundled `mvnw` wrapper).
+- *(Optional)* MySQL 5.7+ or 8.0+ for centralized user authentication. If MySQL is not running, the application seamlessly uses local secure storage (`users.txt`).
+
+---
 
 ## Building the Project
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/prasadus92/face-recognition.git
-   cd face-recognition
-   ```
+Clone the repository and build using Maven or the Maven Wrapper:
 
-2. Install Java 3D API:
-   - Download Java 3D API from Oracle's website
-   - Install it on your system
-   - Add the Java 3D libraries to your system's Java library path
+```bash
+# Using Maven Wrapper (Windows)
+.\mvnw.cmd clean package
 
-3. Set up MySQL:
-   ```sql
-   CREATE DATABASE face_recognition;
-   USE face_recognition;
-   CREATE TABLE users (
-       UserName VARCHAR(30),
-       Email VARCHAR(50),
-       Phone VARCHAR(10),
-       Password VARCHAR(20)
-   );
-   ```
+# Using Maven Wrapper (Linux / macOS)
+./mvnw clean package
 
-4. Install JAI libraries:
-   - Download JAI libraries from Oracle's website
-   - Place the following files in the `lib` directory:
-     - `jai_core.jar`
-     - `jai_codec.jar`
-     - `mlibwrapper_jai.jar`
+# Or using installed Maven
+mvn clean package
+```
 
-5. Build the project:
-   ```bash
-   mvn clean install
-   ```
+To run all unit tests and the end-to-end pipeline test:
+
+```bash
+mvn test
+```
+
+---
 
 ## Running the Application
 
-1. Start MySQL server
+### Option 1: Standalone Executable Fat JAR
+Run the pre-packaged self-contained JAR:
 
-2. Run the application:
-   ```bash
-   mvn exec:java -Dexec.mainClass="src.Main"
-   ```
+```bash
+java -jar target/face-recognition-1.0-SNAPSHOT-jar-with-dependencies.jar
+```
 
-## Platform-Specific Setup
+### Option 2: Run Login & Authentication GUI via Maven
+```bash
+mvn exec:java
+```
 
-### Windows
-1. Install Microsoft Visual C++ Redistributable Package (vcredist_x86.exe)
-2. Copy the DLLs from `platform-specific/windows/` to your system's Java library path:
-   ```bash
-   copy platform-specific\windows\*.dll %JAVA_HOME%\bin
-   ```
+> **Default Demo Account**: If MySQL is not configured, a default demo account is automatically initialized:
+> - **Username**: `admin`
+> - **Password**: `admin123`
+>
+> You can also register a new user directly in the UI.
 
-### Linux
-1. Install required system libraries:
-   ```bash
-   sudo apt-get install libj3d-java
-   ```
+### Option 3: Launch Face Recognition Workbench Directly
+```bash
+mvn exec:java -Dexec.mainClass="src.Main"
+```
 
-### macOS
-1. Install required system libraries:
-   ```bash
-   brew install java3d
-   ```
+---
+
+## Quick Start Tutorial
+
+1. Launch the application (login with `admin` / `admin123` or run `src.Main`).
+2. Click **Load Images** and select `data/sample-faces` (or any folder containing face images / subject subfolders).
+3. Click **Compute Eigen Vectors** to train the eigenface space. The average face will be computed and displayed.
+4. Click **Identify Face** and choose one of the probe images from `data/sample-faces/probes/` (e.g. `probe_subject01.png`).
+   - The system extracts features, sorts the face browser by similarity, and highlights the best match!
+5. Click **Display Result Chart** to open the interactive 3D feature space.
+   - Click and drag with mouse to rotate the 3D space.
+   - Use the mouse wheel to zoom in and out.
+   - Double-click to reset view.
+
+---
 
 ## Project Structure
 
-- `src/main/java/src/` - Source code
-  - `Main.java` - Main application entry point
-  - `Face.java` - Face recognition core logic
-  - `FeatureSpace.java` - Feature extraction and analysis
-  - `TSCD.java` - Two-Stage Classification and Detection
-  - `FaceBrowser.java` - Face visualization component
-- `src/main/resources/` - Application resources
-  - `face.png` - Application icon
-  - `bkd.png` - Background image
-- `lib/` - Local dependencies
-  - JAI libraries
-- `platform-specific/` - Platform-specific files
-  - `windows/` - Windows-specific DLLs
-- `pom.xml` - Maven project configuration
-- `README.md` - Project documentation
+```
+face-recognition/
+├── .github/workflows/build.yml     # GitHub Actions CI build & test workflow
+├── data/sample-faces/               # Sample face dataset (subjects & probes)
+├── src/main/java/src/
+│   ├── Main.java                   # Main UI workbench controller
+│   ├── FrontEnd.java               # Authentication & login screen
+│   ├── Face.java                   # Face representation & boundary detection
+│   ├── TSCD.java                   # Eigenfaces computation & matrix decomposition
+│   ├── FeatureSpace.java           # Feature space management & k-NN matching
+│   ├── FeatureSpaceVisualizer.java # Interactive 3D feature space renderer
+│   ├── FeatureVector.java          # Feature vector container
+│   ├── FaceBrowser.java            # Scrollable face browser component
+│   ├── Picture.java                # Image processing & pixel extraction
+│   ├── DistanceMeasure.java        # Metric interface (Euclidean)
+│   └── ImageBackgroundPanel.java   # UI background panel with resource loader
+├── src/main/resources/             # Application icons & backgrounds
+├── src/test/java/src/              # Unit & integration test suite
+│   ├── DistanceMeasureTest.java
+│   ├── FeatureSpaceTest.java
+│   ├── PictureTest.java
+│   ├── TSCDTest.java
+│   ├── FaceRecognitionEndToEndTest.java
+│   └── SampleDatasetGenerator.java
+├── pom.xml                         # Maven build configuration
+└── mvnw, mvnw.cmd                  # Maven wrappers
+```
 
-## Contributing
+---
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## Author
+
+- **Gaurav** ([@Gauravchaudhary76](https://github.com/Gauravchaudhary76) | [gauravkr11311@gmail.com](mailto:gauravkr11311@gmail.com))
+
+---
 
 ## License
 
-This project is licensed under the MIT License - see the [License.txt](License.txt) file for details.
-
-## Acknowledgments
-
-- Bosphorus Database for testing data
-- Java 3D API team
-- All contributors to the project
+This project is licensed under the GNU General Public License v3 - see the [License.txt](License.txt) file for details.

@@ -1,4 +1,4 @@
-/* Author: Prasad U S
+/* Author: Gaurav <gauravkr11311@gmail.com>
 *
 *
 */
@@ -22,7 +22,7 @@ import javax.swing.ImageIcon;
  * Represents a face image in the face recognition system.
  * Provides methods for face detection, image processing, and feature extraction.
  *
- * @author Prasad Subrahmanya
+ * @author Gaurav <gauravkr11311@gmail.com>
  * @version 1.0
  * @since 1.0
  */
@@ -43,6 +43,15 @@ public class Face {
     private String description;
 
     /**
+     * Creates an empty Face instance.
+     */
+    public Face() {
+        this.classification = null;
+        this.description = "";
+        this.file = null;
+    }
+
+    /**
      * Creates a new Face instance from a file.
      *
      * @param file the image file containing the face
@@ -52,7 +61,9 @@ public class Face {
         this.classification = null;
         this.description = "";
         this.file = file;
-        load(false);
+        if (file != null) {
+            load(false);
+        }
     }
 
     /**
@@ -71,6 +82,15 @@ public class Face {
      */
     public Picture getPicture() {
         return picture;
+    }
+
+    /**
+     * Sets the picture associated with this face.
+     *
+     * @param picture the picture to set
+     */
+    public void setPicture(Picture picture) {
+        this.picture = picture;
     }
 
     /**
@@ -116,7 +136,7 @@ public class Face {
      * @throws MalformedURLException if the file URL is malformed
      */
     public void load(boolean crop) throws MalformedURLException {
-        Image image = new ImageIcon(file.toURL()).getImage();
+        Image image = new ImageIcon(file.toURI().toURL()).getImage();
         BufferedImage bufferedImage = new BufferedImage(
             image.getWidth(null),
             image.getHeight(null),
@@ -128,7 +148,7 @@ public class Face {
         graphics.dispose();
         
         if (crop) {
-            bufferedImage = recognize(recognize(bufferedImage));
+            bufferedImage = recognize(bufferedImage);
         }
         
         BufferedImage resizedImage = resizeImage(bufferedImage, IDEAL_IMAGE_SIZE, true);
@@ -144,11 +164,9 @@ public class Face {
     public BufferedImage recognize(BufferedImage image) {
         int height = image.getHeight(null);
         int width = image.getWidth(null);
-        int scale = ((height + width) / SCALE_FACTOR);
-        int leftCrop = width / 2;
-        int rightCrop = width / 2;
-        int topCrop = height / 2;
-        int bottomCrop = height / 2;
+        if (width <= 0 || height <= 0) {
+            return image;
+        }
         
         picture = new Picture(image);
         
@@ -162,9 +180,9 @@ public class Face {
         double[] processedPixels = pixels.clone();
         
         processSkinColorDetection(width, height, pixels, processedPixels);
-        detectFaceBoundaries(width, height, processedPixels, leftCrop, rightCrop, topCrop, bottomCrop);
+        int[] bounds = detectFaceBoundaries(width, height, processedPixels);
         
-        picture.cropAndDisplay(originalPixelsInt, width, height, leftCrop, rightCrop, topCrop, bottomCrop);
+        picture.cropAndDisplay(originalPixelsInt, width, height, bounds[0], bounds[1], bounds[2], bounds[3]);
         
         return picture.getImage();
     }
@@ -206,9 +224,19 @@ public class Face {
 
     /**
      * Detects the boundaries of the face in the image.
+     *
+     * @param width image width
+     * @param height image height
+     * @param pixels processed skin pixel data
+     * @return int array containing [leftCrop, rightCrop, topCrop, bottomCrop]
      */
-    private void detectFaceBoundaries(int width, int height, double[] pixels, 
-                                    int leftCrop, int rightCrop, int topCrop, int bottomCrop) {
+    private int[] detectFaceBoundaries(int width, int height, double[] pixels) {
+        int leftCrop = width;
+        int rightCrop = 0;
+        int topCrop = height;
+        int bottomCrop = 0;
+        boolean foundFace = false;
+
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
                 Color color = getColor((int) pixels[i + width * j]);
@@ -217,9 +245,21 @@ public class Face {
                     if (i > rightCrop) rightCrop = i;
                     if (j < topCrop) topCrop = j;
                     if (j > bottomCrop) bottomCrop = j;
+                    foundFace = true;
                 }
             }
         }
+
+        if (!foundFace || rightCrop <= leftCrop || bottomCrop <= topCrop) {
+            return new int[] { 0, width, 0, height };
+        }
+
+        leftCrop = Math.max(0, leftCrop - 5);
+        rightCrop = Math.min(width, rightCrop + 5);
+        topCrop = Math.max(0, topCrop - 5);
+        bottomCrop = Math.min(height, bottomCrop + 5);
+
+        return new int[] { leftCrop, rightCrop, topCrop, bottomCrop };
     }
 
     /**

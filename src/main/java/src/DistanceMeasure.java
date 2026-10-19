@@ -5,7 +5,7 @@ package src;
  * Different implementations can provide different distance metrics
  * (e.g., Euclidean, Manhattan, etc.).
  *
- * @author Prasad Subrahmanya
+ * @author Gaurav <gauravkr11311@gmail.com>
  * @version 1.0
  */
 public interface DistanceMeasure {

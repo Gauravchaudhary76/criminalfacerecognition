@@ -3,7 +3,7 @@
  * Handles feature vector storage, distance calculations, and classification.
  * Provides methods for k-nearest neighbor classification and feature space visualization.
  *
- * @author Prasad Subrahmanya
+ * @author Gaurav <gauravkr11311@gmail.com>
  * @version 1.0
  * @since 1.0
  */
@@ -330,5 +330,23 @@ public class FeatureSpace {
      */
     public int getFeatureSpaceSize() {
         return featureSpace.size();
+    }
+
+    /**
+     * Gets the list of unique classifications in the feature space.
+     *
+     * @return list of classifications
+     */
+    public ArrayList<String> getClassifications() {
+        return new ArrayList<>(classifications);
+    }
+
+    /**
+     * Gets the list of feature vectors stored in the feature space.
+     *
+     * @return list of feature vectors
+     */
+    public ArrayList<FeatureVector> getFeatureVectors() {
+        return new ArrayList<>(featureSpace);
     }
 }
